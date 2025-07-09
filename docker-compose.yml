@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    container_name: headshot-backend
+    environment:
+      - BFL_API_KEY=60e13fcf-1d19-4294-b170-815a2ad6d9f7
+    ports:
+      - "8051:8051"
+    restart: unless-stopped
+  front:
+    build: ./front
+    container_name: headshot-front
+    ports:
+      - "4173:4173"
+    restart: unless-stopped
+    depends_on:
+      - backend

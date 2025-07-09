@@ -1,0 +1,32 @@
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.env
+.DS_Store
+
+# Node.js
+front/node_modules/
+front/dist/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docker
+**/.container/
+**/.docker/
+
+# IDEs
+.vscode/
+.idea/
+
+# Misc
+*.swp
+*.swo 
