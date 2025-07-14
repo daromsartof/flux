@@ -2,5 +2,5 @@ fastapi
 uvicorn
 python-multipart
 requests 
-tempfile
-fal_client
+temp
+fal-client

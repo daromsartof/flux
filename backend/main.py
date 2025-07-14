@@ -6,7 +6,7 @@ import requests
 import os
 import shutil
 import base64
-import tempfile
+import temp
 import zipfile
 import fal_client
 from services.utils import on_queue_update
@@ -125,7 +125,7 @@ async def finetune_model(
             )
     
     # Create temporary directory
-    tmpdir = tempfile.mkdtemp()
+    tmpdir = temp.tempdir()
     
     try:
         # Save uploaded images to temporary directory
