@@ -1,7 +1,7 @@
-import HeadshotGenerator from "@/components/HeadshotGenerator"
+import HeadshotGeneratorMulti from "@/components/HeadshotGeneratorMulti"
 
 const Index = () => {
-  return <HeadshotGenerator apiUrl="http://localhost:8051/headshot" />
+  return <HeadshotGeneratorMulti />
 }
 
 export default Index

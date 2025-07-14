@@ -4,12 +4,15 @@ services:
     container_name: headshot-backend
     environment:
       - BFL_API_KEY=60e13fcf-1d19-4294-b170-815a2ad6d9f7
+      - FAL_KEY=526267e9-c8b6-4e8f-8808-2d4e59c10013:f645dfa5db5bcb24596ee74da77d50d8
     ports:
       - "8051:8051"
     restart: unless-stopped
   front:
     build: ./front
     container_name: headshot-front
+    environment:
+      - APP_URL=http://localhost:8085
     ports:
       - "4173:4173"
     restart: unless-stopped
