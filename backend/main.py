@@ -175,25 +175,6 @@ async def finetune_model(
         # Convert to direct download URL
         download_url = temp_url.replace("http://tmpfiles.org/", "http://tmpfiles.org/dl/")
         
-        return {
-            "status": "success",
-            "message": "Fine-tuning job submitted successfully",
-            "result": {
-                "diffusers_lora_file": {
-                    "url": "https://v3.fal.media/files/panda/j5h5maTQdfAB1KYRTUvNe_pytorch_lora_weights.safetensors",
-                    "content_type": "application/octet-stream",
-                    "file_name": "pytorch_lora_weights.safetensors",
-                    "file_size": 89745224
-                },
-                "config_file": {
-                    "url": "https://v3.fal.media/files/rabbit/UjIUy00lP6LYe616JeK4Z_config.json",
-                    "content_type": "application/octet-stream",
-                    "file_name": "config.json",
-                    "file_size": 464
-                },
-                "debug_preprocessed_output": None
-            }
-        }
         result = fal_client.subscribe(
             "fal-ai/flux-lora-fast-training",
             arguments={

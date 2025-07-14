@@ -14,14 +14,19 @@ import { getFineTuneResponseFromStorage, getLoraFileUrlFromCookies } from '@/lib
 
 type AppState = 'idle' | 'uploaded' | 'generating' | 'success' | 'error';
 const apiUrl = import.meta.env.APP_API || "http://localhost:8051"
-console.log(apiUrl)
+type ResultType = {
+  content_type: string
+  height: number
+  url: string
+  width: number
+}
 export default function HeadshotGenerator() {
   const [state, setState] = useState<AppState>('idle');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [triggerWorld, setTriggerWorld] = useState<string>("")
   const [resultUrl, setResultUrl] = useState<string>('');
-  const [resultUrls, setResultUrls] = useState<string[]>([]);
+  const [resultUrls, setResultUrls] = useState<ResultType[]>([])
   const [progress, setProgress] = useState(0);
   const [imageCount, setImageCount] = useState<string>('1');
   const [customPrompt, setCustomPrompt] = useState<string>('professional corporate business headshot of a person, clean studio lighting, formal attire, natural skin texture, centered composition, blurred neutral background');
@@ -120,6 +125,54 @@ export default function HeadshotGenerator() {
     return interval;
   }, []);
 
+  const handleGenerateImage = useCallback(async () => {
+    if (!customPrompt) return
+
+    setState("generating")
+    const progressInterval = simulateProgress()
+    const modelData = getFineTuneResponseFromStorage()
+    try {
+      const formdata = new FormData()
+      formdata.append("prompt", customPrompt)
+      formdata.append("path", modelData.result.diffusers_lora_file.url)
+      const requestOptions = {
+        method: "POST",
+        body: formdata,
+        redirect: "follow" as RequestRedirect,
+      }
+
+      const response = await fetch(`${apiUrl}/headshot`, requestOptions)
+      const data = await response.json()
+      clearInterval(progressInterval)
+      setProgress(100)
+
+      if (data.images) {
+        if (Array.isArray(data.images)) {
+          setResultUrls(data.images)
+          setResultUrl(data.images[0].url)
+        } else {
+          setResultUrls([data.images])
+        }
+        setState("success")
+        toast({
+          title: "Success!",
+          description: `Your professional headshots have been generated`,
+        })
+      } else {
+        throw new Error("No result URL received")
+      }
+    } catch (error) {
+      clearInterval(progressInterval)
+      console.error("Error:", error)
+      setState("error")
+      toast({
+        title: "Generation failed",
+        description: "Please try again or contact support",
+        variant: "destructive",
+      })
+    }
+  }, [customPrompt])
+
   const generateHeadshot = useCallback(async () => {
     if (selectedFiles.length === 0) return;
 
@@ -169,28 +222,7 @@ export default function HeadshotGenerator() {
 
       clearInterval(progressInterval)
       setProgress(100)
-     /* const result = await response.text();
-      const data = JSON.parse(result);
-
-      clearInterval(progressInterval);
-      setProgress(100);
-
-      if (data.result_url) {
-        setResultUrl(data.result_url);
-        // Handle multiple results if returned as array
-        if (Array.isArray(data.result_urls)) {
-          setResultUrls(data.result_urls);
-        } else {
-          setResultUrls([data.result_url]);
-        }
-        setState('success');
-        toast({
-          title: "Success!",
-          description: `Your professional headshots have been generated from ${selectedFiles.length} images`,
-        });
-      } else {
-        throw new Error('No result URL received');
-      }*/
+      handleGenerateImage()
     } catch (error) {
       clearInterval(progressInterval);
       console.error('Error:', error);
@@ -201,7 +233,7 @@ export default function HeadshotGenerator() {
         variant: "destructive"
       });
     }
-  }, [selectedFiles, simulateProgress, toast, imageCount]);
+  }, [selectedFiles, simulateProgress, toast, handleGenerateImage, imageCount]);
 
   const resetApp = useCallback(() => {
     setState('idle');
@@ -229,58 +261,7 @@ export default function HeadshotGenerator() {
     }
   }, [resultUrl]);
 
-  const handleGenerateImage = useCallback(async () => {
-    if (!customPrompt) return
-
-    setState("generating")
-    const progressInterval = simulateProgress()
-    const modelData = getFineTuneResponseFromStorage()
-    try {
-      const formdata = new FormData()
-      formdata.append("prompt", customPrompt)
-      formdata.append("path", modelData.result.diffusers_lora_file.url)
-      const requestOptions = {
-        method: "POST",
-        body: formdata,
-        redirect: "follow" as RequestRedirect,
-      }
-
-      const response = await fetch(`${apiUrl}/headshot`, requestOptions)
-      const result = await response.text()
-      const data = JSON.parse(result)
-      return
-      clearInterval(progressInterval)
-      setProgress(100)
-
-      if (data.result_url) {
-        setResultUrl(data.result_url)
-        // Handle multiple results if returned as array
-        if (Array.isArray(data.result_urls)) {
-          setResultUrls(data.result_urls)
-        } else {
-          setResultUrls([data.result_url])
-        }
-        setState("success")
-        toast({
-          title: "Success!",
-          description: `Your professional headshot${
-            parseInt(imageCount) > 1 ? "s have" : " has"
-          } been generated`,
-        })
-      } else {
-        throw new Error("No result URL received")
-      }
-    } catch (error) {
-      clearInterval(progressInterval)
-      console.error("Error:", error)
-      setState("error")
-      toast({
-        title: "Generation failed",
-        description: "Please try again or contact support",
-        variant: "destructive",
-      })
-    }
-  }, [customPrompt])
+  
 
   useEffect(() => {
     const model = getLoraFileUrlFromCookies()
@@ -357,7 +338,15 @@ export default function HeadshotGenerator() {
                     </SelectTrigger>
                   </Select>
                 </div>
-                <Button disabled={!model} onClick={handleGenerateImage} className={`${model ? "bg-primary hover:bg-primary/90" : "bg-muted text-muted-foreground"}`}>
+                <Button
+                  disabled={!model}
+                  onClick={handleGenerateImage}
+                  className={`${
+                    model
+                      ? "bg-primary hover:bg-primary/90"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   Generate Image
                 </Button>
               </div>
@@ -487,13 +476,13 @@ export default function HeadshotGenerator() {
 
               {resultUrls.length > 1 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {resultUrls.map((url, index) => (
+                  {resultUrls.map((item, index) => (
                     <div
                       key={index}
                       className="rounded-xl overflow-hidden bg-muted flex items-center justify-center p-4"
                     >
                       <img
-                        src={url}
+                        src={item.url}
                         alt={`Generated headshot ${index + 1}`}
                         className="max-w-full max-h-64 object-contain rounded-lg"
                       />
